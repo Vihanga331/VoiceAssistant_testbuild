@@ -1,0 +1,13 @@
+[project]
+name = "assistant"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "kokoro>=0.9.4",
+    "kokoro-onnx>=0.5.0",
+    "ollama>=0.6.2",
+    "sounddevice>=0.5.5",
+    "soundfile>=0.14.0",
+]
