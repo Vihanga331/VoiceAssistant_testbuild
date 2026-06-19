@@ -1,4 +1,4 @@
-# Full-duplex voice assistant
+# voice assistant
 
 The audio pipeline listens continuously, uses WebRTC VAD to detect real speech
 boundaries, transcribes when the user actually stops speaking, streams LLM
