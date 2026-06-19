@@ -18,11 +18,6 @@ Work with user collaborative.
 """
 
 
-
-SYSTEM_PROMPT2 = """Act as a helful voice assistant.
-do not include characters [*,-,]
-"""
-
 def build_assistant() -> Assistant:
     audio_config = AudioConfig()
     audio_config.validate_model_files()
