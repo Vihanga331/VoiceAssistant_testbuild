@@ -12,14 +12,20 @@ from voice_assistant.config import AudioConfig
 
 SYSTEM_PROMPT = """
 You are a helpful Assistant, give me response in few sentences.
-Work with user collaborative. User name is Vihanga.
+Work with user collaborative.
 -Please don't give response in markdown format.
 -Don't include code snippets only provide text response.
 """
 
 
+
+SYSTEM_PROMPT2 = """Act as a helful voice assistant.
+do not include characters [*,-,]
+"""
+
 def build_assistant() -> Assistant:
     audio_config = AudioConfig()
+    audio_config.validate_model_files()
     model = WhisperModel(
         str(audio_config.whisper_model_path),
         device="cpu",
@@ -37,4 +43,6 @@ def build_assistant() -> Assistant:
 if __name__ == "__main__":
     assistant = build_assistant()
     assistant.run()
-                        
+
+
+# problem : Waiting 

@@ -1,59 +1,63 @@
-import time
+import queue
 
 
 class Chatbot:
-    def __init__(self, text_queue, voice_queue, system_prompt, model_name="llama3.2:1b") -> None:
+    """Stream LLM sentences to TTS, discarding superseded turns."""
+
+    def __init__(self, text_queue, voice_queue, audio_config, system_prompt,
+                 llm_model="llama3.2:1b") -> None:
         self.text_queue = text_queue
         self.voice_queue = voice_queue
+        self.config = audio_config
         self.system_prompt = system_prompt
-        self.model_name = model_name
-        self.splitters = (".", "?", "!", "\n")
+        self.model_name = llm_model    # Edited
+        self.history = [{"role": "system", "content": system_prompt}]
 
-    def _flush_sentence_when_ready(self, buffer):
-        if not buffer.strip():
-            return ""
-
-        if any(buffer.rstrip().endswith(splitter) for splitter in self.splitters):
-            self.voice_queue.put(buffer.strip())
-            return ""
-
-        return buffer
+    @staticmethod
+    def _sentences(buffer: str):
+        last = max(buffer.rfind(mark) for mark in (".", "?", "!", "\n"))
+        if last < 0:
+            return [], buffer
+        complete = buffer[: last + 1].strip()
+        return ([complete] if complete else []), buffer[last + 1 :]
 
     def ask_ai(self) -> None:
-        print("Chatbot : ask_ai running...")
-        time.sleep(2)
+        print("LLM worker ready...")
+        while not self.config.stop_event.is_set():
+            try:
+                turn_id, prompt = self.text_queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
+            if turn_id != self.config.turn_id:
+                continue
 
-        while True:
-            prompt = self.text_queue.get()
-            print("LLM translating text")
-
+            self.config.assistant_active.set()
+            user_message = {"role": "user", "content": prompt}
+            messages = self.history + [user_message]
+            response = ""
+            buffer = ""
             try:
                 from ollama import chat
-
-                stream = chat(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "system", "content": self.system_prompt},
-                        {"role": "user", "content": prompt},
-                    ],
-                    stream=True,
-                )
-
-                buffer = ""
+                stream = chat(model=self.model_name, messages=messages, stream=True)
+                print("Assistant: ", end="", flush=True)
                 for chunk in stream:
+                    if turn_id != self.config.turn_id:
+                        break
                     part = chunk["message"]["content"]
                     print(part, end="", flush=True)
+                    response += part
                     buffer += part
-                    buffer = self._flush_sentence_when_ready(buffer)
-
+                    sentences, buffer = self._sentences(buffer)
+                    for sentence in sentences:
+                        self.voice_queue.put((turn_id, sentence))
+                if turn_id != self.config.turn_id:
+                    continue
                 if buffer.strip():
-                    self.voice_queue.put(buffer.strip())
-
-                self.voice_queue.put(None)
+                    self.voice_queue.put((turn_id, buffer.strip()))
+                self.voice_queue.put((turn_id, None))
+                self.history.extend((user_message, {"role": "assistant", "content": response}))
+                self.history = self.history[:1] + self.history[-20:]
                 print()
-            except KeyboardInterrupt:
-                self.voice_queue.put(None)
             except Exception as error:
-                print(f"Chatbot error: {error}")
-                self.voice_queue.put(None)
-
+                print(f"\nChatbot error: {error}")
+                self.voice_queue.put((turn_id, None))
