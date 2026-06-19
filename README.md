@@ -13,8 +13,6 @@ Install dependencies with `uv sync`. Before running, place these model assets:
 Start the assistant with `uv run python detection/main/main.py`. Ollama must be
 running with `llama3.2:1b` installed or you need to change it from `chatbot.py`(future updates will fix the error).
 
-For reliable full duplex, use headphones or an echo-cancelling microphone. The
-software applies a playback-time barge-in threshold, but ordinary speakers can
-feed the assistant's own voice back into the microphone. Tune `barge_in_rms`,
-`speech_end_ms`, and `vad_aggressiveness` through `AudioConfig` for your room.
+---
+
 
