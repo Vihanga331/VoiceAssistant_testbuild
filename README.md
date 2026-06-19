@@ -15,4 +15,8 @@ running with `llama3.2:1b` installed or you need to change it from `chatbot.py`(
 
 ---
 
+## Why this Project ?
 
+This project i used to learn the fundimentals of python programming.
+Debugging codes, learn concepts. this project main goal is to learn the fundimentals.
+get hands on experince in Coding, debugging, software design principles.
